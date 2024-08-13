@@ -23,7 +23,7 @@ initWs(httpServer);
 initHttp(app);
 
 app.get('/health', (req, res) => {
-  res.send('Backend is healthy');
+  res.send('Backend is healthy nowww');
 });
 
 app.post('/OpenVsCode', async (req, res) => {
