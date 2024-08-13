@@ -33,7 +33,7 @@ const httpServer = (0, http_1.createServer)(app);
 (0, ws_1.initWs)(httpServer);
 (0, http_2.initHttp)(app);
 app.get('/health', (req, res) => {
-    res.send('Backend is healthy');
+    res.send('Backend is healthy nowww');
 });
 app.post('/OpenVsCode', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('OpenVsCode request received');
