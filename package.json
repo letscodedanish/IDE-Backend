@@ -20,7 +20,7 @@
   "scripts": {
     "build": "tsc -b",
     "start": "node dist/index.js",
-    "dev": "nodemon --watch src src/index.ts"
+    "dev": "nodemon --watch src dist/index.js"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",
