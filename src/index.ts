@@ -11,6 +11,7 @@ import { fetchS3Folder } from './aws';
 import os from 'os';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 
 const app = express();
 app.use(cors());
@@ -115,43 +116,32 @@ app.post('/api/leetcode', async (req: Request, res: Response) => {
 });
 
 // Function to fetch Codeforces contests
-const fetchCodeforcesContests = async (): Promise<any[]> => {
+app.get('/api/contests', async (req, res) => {
   try {
-    // Introduce a delay to mimic real user interaction
-    await delay(Math.random() * 2000 + 1000);
+      const response = await axios.get('https://node.codolio.com/api/contest-calendar/v1/all/get-upcoming-contests');
+      const contestsData = response.data;
+      console.log('Fetched contest data:', contestsData);
 
-    const response = await axios.get('https://codeforces.com/api/contest.list', {
-      headers: {
-        'User-Agent': getRandomUserAgent(),
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://codeforces.com/',
-        'X-Request-ID': uuidv4(),
-      }
-    });
-    //@ts-ignore
-    return response.data.result.map((contest: any) => ({
-      platform: 'Codeforces',
-      name: contest.name,
-      startDate: new Date(contest.startTimeSeconds * 1000),
-      endDate: new Date(contest.startTimeSeconds * 1000 + contest.durationSeconds * 1000),
-    }));
-  } catch (error) {
-    console.error('Error fetching Codeforces contests:', (error as any).response?.data || 'Unknown error'); // Log the error
-    throw error;
-  }
-};
+      // Save the contest data to a JSON file
+      const filePath = path.join(__dirname, 'contests.json');
+      fs.writeFileSync(filePath, JSON.stringify(contestsData, null, 2));
 
-// Route to fetch contests (currently only from Codeforces)
-app.post('/api/contests', async (req: Request, res: Response) => {
-  try {
-    const contests = await fetchCodeforcesContests();
-    res.json(contests);
+      console.log('Saved contest data to local file');
+      res.json(contestsData);
   } catch (error) {
-    console.error('Error fetching contests:', error); // Log the error
-    res.status(500).json({ error: 'Failed to fetch contests' });
+      console.error('Error fetching contest data:', error);
+      res.status(500).json({ error: 'Failed to fetch contest data' });
   }
 });
 
+app.get('/api/stored-contests', (req, res) => {
+  const filePath = path.join(__dirname, 'contests.json');
+  if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+  } else {
+      res.status(404).json({ error: 'Contests data not found' });
+  }
+});
 // Start the server
 httpServer.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
