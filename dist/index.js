@@ -25,6 +25,7 @@ const aws_1 = require("./aws");
 const os_1 = __importDefault(require("os"));
 const axios_1 = __importDefault(require("axios"));
 const uuid_1 = require("uuid");
+const fs_1 = __importDefault(require("fs"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -33,7 +34,7 @@ const httpServer = (0, http_1.createServer)(app);
 (0, ws_1.initWs)(httpServer);
 (0, http_2.initHttp)(app);
 app.get('/health', (req, res) => {
-    res.send('Backend is healthy');
+    res.send('Backend is healthy nowww');
 });
 app.post('/OpenVsCode', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('OpenVsCode request received');
@@ -118,43 +119,31 @@ app.post('/api/leetcode', (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 }));
 // Function to fetch Codeforces contests
-const fetchCodeforcesContests = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+app.get('/api/contests', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Introduce a delay to mimic real user interaction
-        yield delay(Math.random() * 2000 + 1000);
-        const response = yield axios_1.default.get('https://codeforces.com/api/contest.list', {
-            headers: {
-                'User-Agent': getRandomUserAgent(),
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Referer': 'https://codeforces.com/',
-                'X-Request-ID': (0, uuid_1.v4)(),
-            }
-        });
-        //@ts-ignore
-        return response.data.result.map((contest) => ({
-            platform: 'Codeforces',
-            name: contest.name,
-            startDate: new Date(contest.startTimeSeconds * 1000),
-            endDate: new Date(contest.startTimeSeconds * 1000 + contest.durationSeconds * 1000),
-        }));
+        const response = yield axios_1.default.get('https://node.codolio.com/api/contest-calendar/v1/all/get-upcoming-contests');
+        const contestsData = response.data;
+        console.log('Fetched contest data:', contestsData);
+        // Save the contest data to a JSON file
+        const filePath = path_1.default.join(__dirname, 'contests.json');
+        fs_1.default.writeFileSync(filePath, JSON.stringify(contestsData, null, 2));
+        console.log('Saved contest data to local file');
+        res.json(contestsData);
     }
     catch (error) {
-        console.error('Error fetching Codeforces contests:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || 'Unknown error'); // Log the error
-        throw error;
-    }
-});
-// Route to fetch contests (currently only from Codeforces)
-app.post('/api/contests', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const contests = yield fetchCodeforcesContests();
-        res.json(contests);
-    }
-    catch (error) {
-        console.error('Error fetching contests:', error); // Log the error
-        res.status(500).json({ error: 'Failed to fetch contests' });
+        console.error('Error fetching contest data:', error);
+        res.status(500).json({ error: 'Failed to fetch contest data' });
     }
 }));
+app.get('/api/stored-contests', (req, res) => {
+    const filePath = path_1.default.join(__dirname, 'contests.json');
+    if (fs_1.default.existsSync(filePath)) {
+        res.sendFile(filePath);
+    }
+    else {
+        res.status(404).json({ error: 'Contests data not found' });
+    }
+});
 // Start the server
 httpServer.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
